@@ -1,1 +1,208 @@
-aaa
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Brawl-like Game</title>
+<style>
+body{
+margin:0;
+overflow:hidden;
+background:#222;
+}
+canvas{
+background:#3aa655;
+display:block;
+margin:auto;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game" width="800" height="500"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = {
+x:400,
+y:250,
+size:20,
+speed:4,
+hp:100
+};
+
+let bullets = [];
+let enemyBullets = [];
+let enemies = [];
+let keys = {};
+
+document.addEventListener("keydown", e=>{
+keys[e.key]=true;
+
+if(e.key==="Shift"){
+shoot();
+}
+});
+
+document.addEventListener("keyup", e=>keys[e.key]=false);
+
+function shoot(){
+
+bullets.push({
+x:player.x,
+y:player.y,
+dx:7,
+dy:0,
+size:6
+});
+
+}
+
+function spawnEnemy(){
+
+enemies.push({
+x:Math.random()*800,
+y:Math.random()*500,
+size:20,
+speed:1.2,
+cooldown:0
+});
+
+}
+
+setInterval(spawnEnemy,2000);
+
+function update(){
+
+if(player.hp<=0){
+alert("GAME OVER");
+location.reload();
+}
+
+if(keys["w"]) player.y -= player.speed;
+if(keys["s"]) player.y += player.speed;
+if(keys["a"]) player.x -= player.speed;
+if(keys["d"]) player.x += player.speed;
+
+bullets.forEach(b=>{
+b.x += b.dx;
+b.y += b.dy;
+});
+
+enemyBullets.forEach(b=>{
+b.x += b.dx;
+b.y += b.dy;
+});
+
+enemies.forEach(enemy=>{
+
+let angle = Math.atan2(player.y-enemy.y, player.x-enemy.x);
+
+enemy.x += Math.cos(angle)*enemy.speed;
+enemy.y += Math.sin(angle)*enemy.speed;
+
+enemy.cooldown--;
+
+if(enemy.cooldown<=0){
+
+enemyBullets.push({
+x:enemy.x,
+y:enemy.y,
+dx:Math.cos(angle)*4,
+dy:Math.sin(angle)*4,
+size:6
+});
+
+enemy.cooldown=120;
+
+}
+
+});
+
+bullets.forEach((b,bi)=>{
+enemies.forEach((e,ei)=>{
+
+let dx=b.x-e.x;
+let dy=b.y-e.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<e.size){
+
+enemies.splice(ei,1);
+bullets.splice(bi,1);
+
+}
+
+});
+});
+
+enemyBullets.forEach((b,bi)=>{
+
+let dx=b.x-player.x;
+let dy=b.y-player.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<player.size){
+
+player.hp-=10;
+enemyBullets.splice(bi,1);
+
+}
+
+});
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,800,500);
+
+ctx.fillStyle="blue";
+ctx.beginPath();
+ctx.arc(player.x,player.y,player.size,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="yellow";
+bullets.forEach(b=>{
+ctx.beginPath();
+ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
+ctx.fill();
+});
+
+ctx.fillStyle="orange";
+enemyBullets.forEach(b=>{
+ctx.beginPath();
+ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
+ctx.fill();
+});
+
+ctx.fillStyle="red";
+enemies.forEach(e=>{
+ctx.beginPath();
+ctx.arc(e.x,e.y,e.size,0,Math.PI*2);
+ctx.fill();
+});
+
+ctx.fillStyle="white";
+ctx.font="20px Arial";
+ctx.fillText("HP: "+player.hp,10,30);
+
+}
+
+function gameLoop(){
+update();
+draw();
+requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
